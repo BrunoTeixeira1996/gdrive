@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Gdrive invoices</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+
+
+    <div class="container">
+      <div class="row">
+	<div class="col-md-12">
+
+	  <h1>Gdrive invoices extractor</h1>
+	  <hr>
+	  <form method="POST" id="perform_query">
+	    <label for="title"><h4>Google drive folder path</h4></label><br>
+	    <input type="text" id="path" name="path" value="" required style="width: 500px;"><br><br>
+
+	    <div class="form-group">
+	      <button class="btn btn-outline-info" type="submit" form="perform_query" name="Submit">Query</button>
+	    </div>
+	    <hr>
+	    {{ if .CSV.Content }}
+	    <h3>CSV Output (<b>{{ .CSV.FullPathFolder }}</b>) - {{ .CSV.NOfFiles }} files</h3>
+	    <pre><span style="font-size: 20px"> {{ .CSV.Content }} </span></pre>
+	    {{ else }}
+    	    <h3>CSV Output</h3>
+	    <p>No output yet</p>
+	    {{ end }}
+	</div>
+  </body>
+</html>
