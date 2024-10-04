@@ -1,11 +1,10 @@
 package action
 
 import (
-	"encoding/csv"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"google.golang.org/api/drive/v3"
@@ -56,10 +55,12 @@ func fixFiles(files *[]File) {
 	}
 }
 
-func OutputCSV(server *drive.Service, folderId string) error {
+func OutputCSV(server *drive.Service, folderId string) (string, string, error) {
+	var csvRows []string
+
 	files, err := getFilesFromFolder(server, folderId)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	// output to terminal csv format like this
@@ -68,22 +69,12 @@ func OutputCSV(server *drive.Service, folderId string) error {
 	// 31,Veterinario,Alex
 	// 12.21,Mix,Bruno
 
-	w := csv.NewWriter(os.Stdout)
-	// Write file data row by row
 	for _, f := range files {
-		err := w.Write([]string{f.Price, f.Category, f.Owner})
-		if err != nil {
-			return fmt.Errorf("[action error] writing CSV record: %s\n", err)
-		}
+		row := f.Price + "," + f.Category + "," + f.Owner
+		csvRows = append(csvRows, row)
 	}
 
-	w.Flush()
-	// Check if there were any errors during flush
-	if err := w.Error(); err != nil {
-		return fmt.Errorf("[action error] flushing CSV writer: %s\n", err)
-	}
-
-	return nil
+	return strings.Join(csvRows, "\n"), strconv.Itoa(len(files)), nil
 }
 
 // findFolderID traverses a given folder path in Google Drive and returns the folder ID
