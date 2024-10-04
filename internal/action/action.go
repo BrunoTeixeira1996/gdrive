@@ -1,8 +1,11 @@
 package action
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
+	"os"
+	"regexp"
 	"strings"
 
 	"google.golang.org/api/drive/v3"
@@ -13,6 +16,17 @@ type File struct {
 	Name     string
 	Category string
 	Price    string
+	Owner    string
+}
+
+func (f *File) extractCategoryToOwner() string {
+	re := regexp.MustCompile(`\w+\((\w)\)?`)
+	match := re.FindStringSubmatch(f.Category)
+
+	if len(match) > 1 {
+		return match[1] // Return the letter inside the parentheses
+	}
+	return ""
 }
 
 func (f *File) fixFile() {
@@ -26,6 +40,13 @@ func (f *File) fixFile() {
 	f.Category = parts[0]
 
 	f.Price = strings.Replace(strings.Split(strings.Split(f.Name, "_")[1], ".")[0], "-", ".", -1)
+
+	f.Owner = f.extractCategoryToOwner()
+
+	// after assigning an owner we fix the category
+	re := regexp.MustCompile(`\([^)]+\)`)
+	f.Category = re.ReplaceAllString(parts[0], "")
+
 }
 
 // Modify the files
@@ -35,20 +56,32 @@ func fixFiles(files *[]File) {
 	}
 }
 
-// TODO: fazer isto
 func OutputCSV(server *drive.Service, folderId string) error {
 	files, err := getFilesFromFolder(server, folderId)
 	if err != nil {
 		return err
 	}
 
-	_ = files
-	// TODO
 	// output to terminal csv format like this
 	// 12.1,Carro,
 	// 22.1,Supermercado,
 	// 31,Veterinario,Alex
 	// 12.21,Mix,Bruno
+
+	w := csv.NewWriter(os.Stdout)
+	// Write file data row by row
+	for _, f := range files {
+		err := w.Write([]string{f.Price, f.Category, f.Owner})
+		if err != nil {
+			return fmt.Errorf("[action error] writing CSV record: %s\n", err)
+		}
+	}
+
+	w.Flush()
+	// Check if there were any errors during flush
+	if err := w.Error(); err != nil {
+		return fmt.Errorf("[action error] flushing CSV writer: %s\n", err)
+	}
 
 	return nil
 }
