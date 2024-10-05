@@ -15,10 +15,18 @@ import (
 	"google.golang.org/api/option"
 )
 
-func GetDriveService() (*drive.Service, error) {
-	ctx := context.TODO()
+func GetDriveService(isGokrazy bool) (*drive.Service, error) {
 
-	b, err := os.ReadFile("credentials.json")
+	var (
+		ctx       = context.TODO()
+		credsFile = "credentials.json"
+	)
+
+	if isGokrazy {
+		credsFile = "/etc/gdrive/credentials.json"
+	}
+
+	b, err := os.ReadFile(credsFile)
 	if err != nil {
 		fmt.Printf("Unable to read credentials.json file. Err: %v\n", err)
 		return nil, err
@@ -31,7 +39,7 @@ func GetDriveService() (*drive.Service, error) {
 		return nil, err
 	}
 
-	client := getClient(config)
+	client := getClient(config, isGokrazy)
 
 	service, err := drive.NewService(ctx, option.WithHTTPClient(client))
 
@@ -44,11 +52,15 @@ func GetDriveService() (*drive.Service, error) {
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getClient(config *oauth2.Config) *http.Client {
+func getClient(config *oauth2.Config, isGokrazy bool) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
 	tokFile := "token.json"
+	if isGokrazy {
+		tokFile = "/etc/gdrive/token.json"
+	}
+
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
