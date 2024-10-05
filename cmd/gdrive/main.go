@@ -9,7 +9,7 @@ import (
 )
 
 func run() error {
-	gokrazyFlag := flag.Bool("gokrazy", true, "use this if you want to use gokrazy")
+	gokrazyFlag := flag.Bool("gokrazy", false, "use this if you want to use gokrazy")
 	flag.Parse()
 
 	if *gokrazyFlag {
