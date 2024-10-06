@@ -11,21 +11,23 @@ import (
 )
 
 type File struct {
-	Id       string
-	Name     string
-	Category string
-	Price    string
-	Owner    string
+	Id          string
+	Name        string
+	Category    string
+	Price       string
+	Owner       string
+	Description string
 }
 
-func (f *File) extractCategoryToOwner() string {
-	re := regexp.MustCompile(`\w+\((\w)\)?`)
-	match := re.FindStringSubmatch(f.Category)
+func (f *File) extractParentheses() (string, string) {
+	// Regex to capture both first and second sets of parentheses
+	re := regexp.MustCompile(`\(([^)]*)\)\(([^)]*)\)`)
+	match := re.FindStringSubmatch(f.Name)
 
-	if len(match) > 1 {
-		return match[1] // Return the letter inside the parentheses
+	if len(match) > 2 {
+		return match[1], match[2] // Return both first and second parentheses
 	}
-	return ""
+	return "", "" // Return empty strings if not found
 }
 
 func (f *File) fixFile() {
@@ -38,14 +40,10 @@ func (f *File) fixFile() {
 
 	f.Category = parts[0]
 
-	f.Price = strings.Replace(strings.Split(strings.Split(f.Name, "_")[1], ".")[0], "-", ".", -1)
+	pricePart := strings.Split(parts[1], "(")[0]
+	f.Price = strings.Replace(pricePart, "-", ".", 1) // Replace the first hyphen with a period
 
-	f.Owner = f.extractCategoryToOwner()
-
-	// after assigning an owner we fix the category
-	re := regexp.MustCompile(`\([^)]+\)`)
-	f.Category = re.ReplaceAllString(parts[0], "")
-
+	f.Owner, f.Description = f.extractParentheses()
 }
 
 // Modify the files
@@ -63,6 +61,10 @@ func OutputCSV(server *drive.Service, folderId string) (string, string, error) {
 		return "", "", err
 	}
 
+	// 	Mix_21-12()(PrendaRegina).pdf
+	//  Mix_21-12()().pdf
+	//  Mix_21-12(B)(PC).pdf
+
 	// output to terminal csv format like this
 	// 12.1,Carro,
 	// 22.1,Supermercado,
@@ -70,7 +72,7 @@ func OutputCSV(server *drive.Service, folderId string) (string, string, error) {
 	// 12.21,Mix,Bruno
 
 	for _, f := range files {
-		row := f.Price + "," + f.Category + "," + f.Owner
+		row := f.Price + "," + f.Category + "," + f.Owner + "," + f.Description
 		csvRows = append(csvRows, row)
 	}
 
